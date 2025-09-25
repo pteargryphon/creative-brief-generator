@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creative Brief Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Creative Strategy Brief Generator</h1>
+            <p>Generate comprehensive creative briefs for any brand in minutes</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="input-section">
+                <label for="brand-url">Enter Brand Website URL</label>
+                <div class="input-group">
+                    <input 
+                        type="url" 
+                        id="brand-url" 
+                        placeholder="https://example.com"
+                        value=""
+                        required
+                    >
+                    <button id="generate-btn" onclick="generateBrief()">
+                        Generate Brief
+                    </button>
+                </div>
+                <small>Enter the main website URL of the brand you want to analyze</small>
+            </div>
+            
+            <div id="progress-section" class="progress-section hidden">
+                <h3>Generating Your Brief</h3>
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <p id="status-text" class="status-text">Initializing...</p>
+                <div class="progress-percentage">
+                    <span id="progress-percent">0</span>%
+                </div>
+            </div>
+            
+            <div id="result-section" class="result-section hidden">
+                <div class="success-icon">✅</div>
+                <h2>Brief Generated Successfully!</h2>
+                <p>Your creative strategy brief is ready</p>
+                <a id="coda-link" class="coda-button" target="_blank" rel="noopener noreferrer">
+                    Open in Coda →
+                </a>
+                <button class="reset-button" onclick="resetForm()">
+                    Generate Another Brief
+                </button>
+            </div>
+            
+            <div id="error-section" class="error-section hidden">
+                <div class="error-icon">❌</div>
+                <h3>Something went wrong</h3>
+                <p id="error-message"></p>
+                <button class="reset-button" onclick="resetForm()">
+                    Try Again
+                </button>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Powered by OpenAI GPT-4 • Foreplay • Apify • Coda</p>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

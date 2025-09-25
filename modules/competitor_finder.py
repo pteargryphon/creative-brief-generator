@@ -1,12 +1,13 @@
 import os
 import requests
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 import json
+from bs4 import BeautifulSoup
 
 class CompetitorFinder:
     def __init__(self):
-        self.serp_api_key = os.environ.get('SERP_API_KEY')
-        # Can use ScraperAPI or SerpAPI for Google search results
+        # We'll use DuckDuckGo (free, no API key needed!)
+        self.search_method = os.environ.get('SEARCH_METHOD', 'duckduckgo')
         
     def find(self, brand_data):
         """Find top 5 competitors based on brand data"""
@@ -17,14 +18,14 @@ class CompetitorFinder:
             queries = self._build_search_queries(brand_data)
             
             # Search for competitors
-            for query in queries[:2]:  # Limit searches to save API calls
-                results = self._search_google(query, brand_data['url'])
+            for query in queries[:2]:  # Limit searches to save time
+                results = self._search_web(query, brand_data['url'])
                 competitors.extend(results)
             
             # Deduplicate and limit to 5
             unique_competitors = self._deduplicate_competitors(competitors)
             
-            # Analyze each competitor
+            # Analyze each competitor (basic analysis)
             analyzed = []
             for comp in unique_competitors[:5]:
                 analyzed.append(self._analyze_competitor(comp))
@@ -52,31 +53,69 @@ class CompetitorFinder:
         
         return queries
     
-    def _search_google(self, query, exclude_url):
-        """Search Google for competitors"""
+    def _search_web(self, query, exclude_url):
+        """Search the web using free search APIs"""
+        if self.search_method == 'duckduckgo':
+            return self._search_duckduckgo(query, exclude_url)
+        else:
+            return self._get_mock_search_results(query)
+    
+    def _search_duckduckgo(self, query, exclude_url):
+        """Use DuckDuckGo instant answer API (free, no key needed!)"""
         results = []
         
-        # For MVP, return mock data
-        # In production, use ScraperAPI or SerpAPI here
-        if not self.serp_api_key:
+        try:
+            # DuckDuckGo HTML search (since their API is limited)
+            # We'll scrape the HTML results page
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            
+            # Use DuckDuckGo HTML search
+            search_url = f"https://html.duckduckgo.com/html/?q={quote(query)}"
+            response = requests.get(search_url, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                
+                # Find search results
+                for result in soup.select('.result__body')[:10]:  # Top 10 results
+                    try:
+                        # Get URL
+                        link_elem = result.select_one('.result__url')
+                        if not link_elem:
+                            continue
+                        
+                        url = link_elem.get_text().strip()
+                        if not url.startswith('http'):
+                            url = 'https://' + url
+                        
+                        # Skip if it's the brand we're analyzing
+                        if exclude_url and exclude_url in url:
+                            continue
+                        
+                        # Get title and description
+                        title_elem = result.select_one('.result__title')
+                        desc_elem = result.select_one('.result__snippet')
+                        
+                        title = title_elem.get_text().strip() if title_elem else ''
+                        description = desc_elem.get_text().strip() if desc_elem else ''
+                        
+                        results.append({
+                            'url': url,
+                            'title': title,
+                            'description': description
+                        })
+                        
+                    except Exception as e:
+                        continue
+                
+        except Exception as e:
+            print(f"DuckDuckGo search error: {e}")
+            # Fallback to mock data
             return self._get_mock_search_results(query)
         
-        try:
-            # ScraperAPI example (uncomment when API key is available)
-            # url = "http://api.scraperapi.com"
-            # params = {
-            #     'api_key': self.serp_api_key,
-            #     'url': f'https://www.google.com/search?q={query}',
-            #     'render': 'false'
-            # }
-            # response = requests.get(url, params=params)
-            # Parse response and extract competitor URLs
-            pass
-            
-        except Exception as e:
-            print(f"Search error: {e}")
-            
-        return results
+        return results[:5]  # Return top 5
     
     def _get_mock_search_results(self, query):
         """Return mock search results for testing"""
@@ -85,12 +124,17 @@ class CompetitorFinder:
             {
                 'url': 'https://competitor1.com',
                 'title': 'Leading Brand in Space',
-                'description': 'Top competitor offering similar products'
+                'description': 'Top competitor offering similar products with focus on quality and innovation'
             },
             {
                 'url': 'https://competitor2.com',
                 'title': 'Alternative Solution Provider',
-                'description': 'Another major player in the industry'
+                'description': 'Another major player in the industry known for customer service'
+            },
+            {
+                'url': 'https://competitor3.com',
+                'title': 'Premium Option',
+                'description': 'High-end solution for discerning customers'
             }
         ]
         return mock_results
@@ -101,26 +145,30 @@ class CompetitorFinder:
         unique = []
         
         for comp in competitors:
-            domain = urlparse(comp['url']).netloc
-            if domain not in seen:
-                seen.add(domain)
-                unique.append(comp)
+            try:
+                domain = urlparse(comp['url']).netloc
+                if domain and domain not in seen:
+                    seen.add(domain)
+                    unique.append(comp)
+            except:
+                continue
         
         return unique
     
     def _analyze_competitor(self, competitor):
-        """Analyze a competitor website"""
+        """Analyze a competitor website (basic analysis from search results)"""
+        # In a full implementation, you could scrape their site
+        # For now, we'll use the search result data
         return {
-            'brand_name': competitor.get('title', 'Unknown'),
+            'brand_name': competitor.get('title', 'Unknown').split(' - ')[0].split(' | ')[0],
             'url': competitor['url'],
             'usp': competitor.get('description', 'To be analyzed'),
-            'funnel_type': 'Unknown',  # Would analyze in production
-            'has_ads': True  # Would check Meta ads library
+            'funnel_type': 'Unknown',  # Would need to analyze their site
+            'has_ads': True  # Assume they have ads (would check Meta library in production)
         }
     
     def _get_mock_competitors(self, brand_data):
         """Return mock competitors for testing"""
-        # This provides sample data structure
         industry = brand_data.get('industry', 'general')
         niche = brand_data.get('niche', 'products')
         

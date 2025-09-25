@@ -5,8 +5,6 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
       - key: OPENAI_API_KEY
         sync: false
       - key: FOREPLAY_API_KEY
@@ -15,14 +13,8 @@ services:
         sync: false
       - key: CODA_API_TOKEN
         sync: false
-      - key: CODA_DOC_TEMPLATE_ID
+      - key: CODA_DOC_ID
         sync: false
-      - key: SERP_API_KEY
+      - key: CODA_TABLE_ID
         sync: false
     healthCheckPath: /health
-    
-databases:
-  - name: creative-brief-db
-    databaseName: creative_brief
-    user: creative_brief_user
-    plan: free

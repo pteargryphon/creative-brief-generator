@@ -12,6 +12,7 @@ from modules.foreplay_client import ForeplayClient
 from modules.reddit_miner import RedditMiner
 from modules.ai_engine import AIEngine
 from modules.coda_publisher import CodaPublisher
+from modules.error_logger import error_logger
 
 app = Flask(__name__)
 
@@ -22,6 +23,24 @@ executor = ThreadPoolExecutor(max_workers=4)
 @app.route('/')
 def home():
     return render_template('index.html')
+
+@app.route('/debug')
+def debug():
+    """Debug endpoint to check API status and errors"""
+    debug_info = {
+        'api_status': error_logger.check_api_status(),
+        'recent_errors': error_logger.get_errors()[-10:],  # Last 10 errors
+        'error_count': len(error_logger.get_errors()),
+        'environment': {
+            'OPENAI_API_KEY': 'Set' if os.environ.get('OPENAI_API_KEY') else 'Not set',
+            'FOREPLAY_API_KEY': 'Set' if os.environ.get('FOREPLAY_API_KEY') else 'Not set',
+            'APIFY_API_TOKEN': 'Set' if os.environ.get('APIFY_API_TOKEN') else 'Not set',
+            'CODA_API_TOKEN': 'Set' if os.environ.get('CODA_API_TOKEN') else 'Not set',
+            'CODA_DOC_ID': os.environ.get('CODA_DOC_ID', 'Not set'),
+            'CODA_TABLE_ID': os.environ.get('CODA_TABLE_ID', 'Not set')
+        }
+    }
+    return jsonify(debug_info)
 
 @app.route('/api/generate', methods=['POST'])
 def generate_brief():

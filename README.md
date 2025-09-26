@@ -116,6 +116,11 @@ A web application that generates comprehensive creative strategy briefs for bran
 2. Create a template doc (optional)
 3. Note the template doc ID if using one
 
+**Default Coda Configuration:**
+- Document ID: `TeddWcsh5U`
+- Table ID: `grid-XSXEqW-PnP`
+- The system can read from and write to this Coda table via the API
+
 ## Cost Estimates
 
 Per brief generation:

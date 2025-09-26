@@ -2,6 +2,7 @@ import os
 import requests
 import json
 from datetime import datetime
+from .error_logger import error_logger
 
 class CodaPublisher:
     def __init__(self):
@@ -11,8 +12,8 @@ class CodaPublisher:
             'Authorization': f'Bearer {self.api_token}',
             'Content-Type': 'application/json'
         }
-        self.doc_id = os.environ.get('CODA_DOC_ID', '')  # Doc containing the table
-        self.table_id = os.environ.get('CODA_TABLE_ID', '')  # The specific table ID
+        self.doc_id = os.environ.get('CODA_DOC_ID', 'TeddWcsh5U')  # Doc containing the table
+        self.table_id = os.environ.get('CODA_TABLE_ID', 'grid-XSXEqW-PnP')  # The specific table ID
         
     def create_doc(self, brief):
         """Add a new row to the Coda table with the brief content"""
@@ -98,7 +99,9 @@ class CodaPublisher:
             'Opportunities': opportunities_text,
             'Ad Concepts': concepts_text,
             'Generated Date': datetime.now().strftime('%Y-%m-%d'),
-            'Status': 'Complete'
+            'Status': 'Complete',
+            'Debug_Errors': error_logger.get_error_summary(),
+            'API_Status': error_logger.check_api_status()
         }
         
         return row_data

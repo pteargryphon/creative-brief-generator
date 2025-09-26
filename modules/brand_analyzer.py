@@ -4,6 +4,7 @@ from urllib.parse import urlparse, urljoin
 import re
 import os
 import openai
+from .error_logger import error_logger
 
 class BrandAnalyzer:
     def __init__(self):
@@ -42,6 +43,7 @@ class BrandAnalyzer:
             return analysis
             
         except Exception as e:
+            error_logger.log_error('BrandAnalyzer.analyze', e, {'url': url})
             print(f"Error analyzing brand: {e}")
             # Return minimal data on error
             return {
@@ -153,6 +155,10 @@ Respond with valid JSON only."""
             return json.loads(result.strip())
             
         except Exception as e:
+            error_logger.log_error('BrandAnalyzer._ai_analyze', e, {
+                'url': url, 
+                'api_key_set': bool(openai.api_key and openai.api_key != 'sk-...')
+            })
             print(f"AI analysis error: {e}")
             # Return defaults on error
             return {

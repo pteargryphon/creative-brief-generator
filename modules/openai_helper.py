@@ -3,29 +3,29 @@ Helper module to properly initialize OpenAI client
 Handles proxy and environment issues
 """
 import os
-from openai import OpenAI
 
 def get_openai_client():
     """
     Get a properly configured OpenAI client
     Handles proxy issues that cause 'proxies' argument errors
     """
-    # Remove proxy environment variables that cause issues with OpenAI client
-    proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy']
+    # Remove ALL proxy environment variables before importing OpenAI
+    proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 
+                  'ALL_PROXY', 'all_proxy', 'NO_PROXY', 'no_proxy']
     saved_proxies = {}
     
-    # Temporarily remove proxy variables
+    # Save and remove proxy variables
     for var in proxy_vars:
         if var in os.environ:
-            saved_proxies[var] = os.environ.pop(var)
+            saved_proxies[var] = os.environ[var]
+            del os.environ[var]
     
     try:
-        # Initialize OpenAI client without proxy interference
-        client = OpenAI(
-            api_key=os.environ.get('OPENAI_API_KEY'),
-            # Explicitly set to None to avoid proxy issues
-            http_client=None
-        )
+        # Import OpenAI AFTER removing proxy vars to prevent initialization issues
+        from openai import OpenAI
+        
+        # Initialize OpenAI client
+        client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
         
         return client
     finally:

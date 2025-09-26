@@ -1,11 +1,12 @@
 import os
 import json
-import openai
+from openai import OpenAI
+from .error_logger import error_logger
 
 class AIEngine:
     def __init__(self):
-        openai.api_key = os.environ.get('OPENAI_API_KEY')
-        self.model = "gpt-3.5-turbo"  # Using GPT-3.5 for cost efficiency
+        self.client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+        self.model = "gpt-5-mini"  # Using GPT-5-mini for best balance of quality and cost
         
     def generate_brief(self, data):
         """Generate complete creative strategy brief"""
@@ -47,6 +48,7 @@ class AIEngine:
             return brief
             
         except Exception as e:
+            error_logger.log_error('AIEngine.generate_brief', e)
             print(f"AI generation error: {e}")
             return self._get_fallback_brief(data)
     
@@ -80,7 +82,7 @@ Provide a JSON response with:
 Focus on patterns that appear in long-running, successful ads."""
 
         try:
-            response = openai.chat.completions.create(
+            response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a creative strategist analyzing ad trends. Respond with valid JSON only."},
@@ -99,6 +101,7 @@ Focus on patterns that appear in long-running, successful ads."""
             return json.loads(result.strip())
             
         except Exception as e:
+            error_logger.log_error('AIEngine._analyze_trends', e)
             print(f"Trend analysis error: {e}")
             return self._get_default_trends()
     
@@ -134,7 +137,7 @@ Provide a JSON response with exactly 3 opportunities:
 Focus on gaps in the current market that align with customer pain points."""
 
         try:
-            response = openai.chat.completions.create(
+            response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a strategic marketing consultant. Respond with valid JSON only."},
@@ -153,6 +156,7 @@ Focus on gaps in the current market that align with customer pain points."""
             return json.loads(result.strip())
             
         except Exception as e:
+            error_logger.log_error('AIEngine._find_opportunities', e)
             print(f"Opportunity analysis error: {e}")
             return self._get_default_opportunities()
     
@@ -193,7 +197,7 @@ Generate exactly 5 ad concepts with this JSON structure:
 Make each concept unique and aligned with different opportunities/angles."""
 
         try:
-            response = openai.chat.completions.create(
+            response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are an expert copywriter creating high-converting ad concepts. Respond with valid JSON only."},
@@ -223,6 +227,7 @@ Make each concept unique and aligned with different opportunities/angles."""
             return concepts
             
         except Exception as e:
+            error_logger.log_error('AIEngine._generate_concepts', e)
             print(f"Concept generation error: {e}")
             return [self._get_default_concept(i) for i in range(5)]
     

@@ -3,12 +3,12 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
 import re
 import os
-import openai
+from openai import OpenAI
 from .error_logger import error_logger
 
 class BrandAnalyzer:
     def __init__(self):
-        openai.api_key = os.environ.get('OPENAI_API_KEY')
+        self.client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
@@ -133,8 +133,8 @@ Please provide a JSON response with:
 Respond with valid JSON only."""
 
         try:
-            response = openai.chat.completions.create(
-                model="gpt-3.5-turbo",
+            response = self.client.chat.completions.create(
+                model="gpt-5-mini",  # Using gpt-5-mini for cost efficiency while getting GPT-5 quality
                 messages=[
                     {"role": "system", "content": "You are a marketing analyst. Respond with valid JSON only."},
                     {"role": "user", "content": prompt}
@@ -157,7 +157,7 @@ Respond with valid JSON only."""
         except Exception as e:
             error_logger.log_error('BrandAnalyzer._ai_analyze', e, {
                 'url': url, 
-                'api_key_set': bool(openai.api_key and openai.api_key != 'sk-...')
+                'api_key_set': bool(os.environ.get('OPENAI_API_KEY') and os.environ.get('OPENAI_API_KEY') != 'sk-...')
             })
             print(f"AI analysis error: {e}")
             # Return defaults on error

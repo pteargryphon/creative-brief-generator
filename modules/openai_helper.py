@@ -37,13 +37,18 @@ class OpenAIHelper:
         try:
             # Use provided model or default
             model = model or self.model
-            
+
+            # GPT-5 models only support temperature=1 (the default)
+            # Override any other temperature value for GPT-5
+            if model.startswith('gpt-5'):
+                temperature = 1.0
+
             data = {
                 "model": model,
                 "messages": messages,
                 "temperature": temperature
             }
-            
+
             # For GPT-5, add special parameters if not already in kwargs
             if model.startswith('gpt-5'):
                 # Add GPT-5 specific parameters

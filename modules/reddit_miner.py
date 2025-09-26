@@ -7,18 +7,13 @@ import re
 class RedditMiner:
     def __init__(self):
         self.apify_token = os.environ.get('APIFY_API_TOKEN')
-        self.actor_id = 'trudax/reddit-scraper'  # Apify Reddit Scraper actor
+        self.actor_id = 'trudax~reddit-scraper'  # Apify Reddit Scraper actor - use ~ not /
         print(f"Reddit: Apify token {'found' if self.apify_token else 'not found'} (length: {len(self.apify_token) if self.apify_token else 0})")
         
     def mine_problems(self, keywords, niche):
         """Mine Reddit for customer problems and pain points"""
         try:
-            # Temporarily use enhanced mock data while we fix Apify integration
-            print(f"Reddit: Using enhanced mock data for niche: {niche}")
-            print("Reddit: Note - Apify integration temporarily disabled pending actor fix")
-            return self._get_enhanced_mock_problems(niche, keywords)
-
-            # Original Apify code (disabled temporarily)
+            # Re-enable Apify integration with correct actor ID
             if not self.apify_token:
                 print("Reddit: No Apify token found, using mock data")
                 # Return mock data if no API token

@@ -92,7 +92,7 @@ class CodaPublisher:
             'USP': ', '.join(brand.get('usp', [])),
             'Funnel Type': brand.get('funnel_type', ''),
             'Keywords': ', '.join(brand.get('keywords', [])),
-            'Top Competitors': competitors_text,
+            'Top 5 Competitors': competitors_text,
             'Meta Advertisers': meta_text,
             'Reddit Pain Points': reddit_text,
             'Creative Trends': trends_text,

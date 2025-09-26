@@ -29,7 +29,7 @@ class OpenAIHelper:
         """Compatibility layer to mimic OpenAI client structure"""
         return self
         
-    def create(self, messages, model=None, temperature=0.7, max_tokens=500, **kwargs):
+    def create(self, messages, model=None, temperature=0.7, max_tokens=None, **kwargs):
         """
         Create a chat completion using direct API call
         Mimics the OpenAI client.chat.completions.create() interface
@@ -41,11 +41,25 @@ class OpenAIHelper:
             data = {
                 "model": model,
                 "messages": messages,
-                "temperature": temperature,
-                "max_tokens": max_tokens
+                "temperature": temperature
             }
             
+            # For GPT-5, add special parameters if not already in kwargs
+            if model.startswith('gpt-5'):
+                # Add GPT-5 specific parameters
+                if 'reasoning_effort' not in kwargs:
+                    data['reasoning_effort'] = 'low'  # Use low for faster responses
+                if 'verbosity' not in kwargs:
+                    data['verbosity'] = 'medium'  # Medium verbosity for balanced responses
+            
+            # Don't add max_tokens for GPT-5 - it causes errors
+            # Only add for GPT-4 and older models
+            if max_tokens is not None and not model.startswith('gpt-5'):
+                data["max_tokens"] = max_tokens
+            
             # Add any additional kwargs (like response_format, etc)
+            # Remove max_tokens from kwargs to prevent duplication
+            kwargs.pop('max_tokens', None)
             data.update(kwargs)
             
             response = requests.post(
@@ -56,7 +70,10 @@ class OpenAIHelper:
             )
             
             if response.status_code != 200:
-                raise Exception(f"OpenAI API error: {response.status_code} - {response.text[:200]}")
+                error_msg = f"OpenAI API error: {response.status_code} - {response.text[:500]}"
+                print(f"Failed API call with data: {json.dumps(data, indent=2)}")
+                print(f"Error: {error_msg}")
+                raise Exception(error_msg)
             
             # Return object that mimics OpenAI response structure
             result = response.json()

@@ -13,6 +13,12 @@ class RedditMiner:
     def mine_problems(self, keywords, niche):
         """Mine Reddit for customer problems and pain points"""
         try:
+            # Temporarily use enhanced mock data while we fix Apify integration
+            print(f"Reddit: Using enhanced mock data for niche: {niche}")
+            print("Reddit: Note - Apify integration temporarily disabled pending actor fix")
+            return self._get_enhanced_mock_problems(niche, keywords)
+
+            # Original Apify code (disabled temporarily)
             if not self.apify_token:
                 print("Reddit: No Apify token found, using mock data")
                 # Return mock data if no API token
@@ -234,6 +240,64 @@ class RedditMiner:
         
         return clusters[:5]
     
+    def _get_enhanced_mock_problems(self, niche, keywords):
+        """Return enhanced mock Reddit problems based on niche and keywords"""
+        # Generate contextual problems based on the first keyword
+        main_topic = keywords[0] if keywords else niche
+
+        return [
+            {
+                'category': 'User Experience',
+                'count': 52,
+                'example_quote': f"I struggle with {main_topic} because the interface is so confusing",
+                'problems': [
+                    {'statement': f"The {main_topic} UI is not intuitive at all", 'score': 342},
+                    {'statement': "Too many steps to do simple tasks", 'score': 289},
+                    {'statement': "New users get lost immediately", 'score': 234}
+                ]
+            },
+            {
+                'category': 'Performance',
+                'count': 41,
+                'example_quote': f"Why is {main_topic} always so slow and buggy",
+                'problems': [
+                    {'statement': f"{main_topic} crashes when handling large files", 'score': 298},
+                    {'statement': "Loading times are unbearable", 'score': 256},
+                    {'statement': "Sync issues happen constantly", 'score': 198}
+                ]
+            },
+            {
+                'category': 'Pricing',
+                'count': 38,
+                'example_quote': f"The cost of {main_topic} services keeps increasing",
+                'problems': [
+                    {'statement': "Free tier is too limited to be useful", 'score': 267},
+                    {'statement': "Pricing jumps are huge between tiers", 'score': 223},
+                    {'statement': "Hidden fees everywhere", 'score': 187}
+                ]
+            },
+            {
+                'category': 'Integration',
+                'count': 29,
+                'example_quote': f"I wish {main_topic} worked better with other tools",
+                'problems': [
+                    {'statement': "Doesn't integrate with my existing workflow", 'score': 212},
+                    {'statement': "API limitations are frustrating", 'score': 178},
+                    {'statement': "Export options are too restrictive", 'score': 156}
+                ]
+            },
+            {
+                'category': 'Support',
+                'count': 24,
+                'example_quote': "Getting help is nearly impossible",
+                'problems': [
+                    {'statement': "Support tickets take weeks to get responses", 'score': 189},
+                    {'statement': "Documentation is outdated or missing", 'score': 167},
+                    {'statement': "Community forums are the only real help", 'score': 134}
+                ]
+            }
+        ]
+
     def _get_mock_problems(self, niche):
         """Return mock Reddit problems for testing"""
         return [

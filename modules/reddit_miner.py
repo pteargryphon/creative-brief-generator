@@ -8,21 +8,28 @@ class RedditMiner:
     def __init__(self):
         self.apify_token = os.environ.get('APIFY_API_TOKEN')
         self.actor_id = 'alexey/reddit-scraper'  # Apify Reddit Scraper actor
+        print(f"Reddit: Apify token {'found' if self.apify_token else 'not found'} (length: {len(self.apify_token) if self.apify_token else 0})")
         
     def mine_problems(self, keywords, niche):
         """Mine Reddit for customer problems and pain points"""
         try:
             if not self.apify_token:
+                print("Reddit: No Apify token found, using mock data")
                 # Return mock data if no API token
                 return self._get_mock_problems(niche)
+
+            print(f"Reddit: Mining problems for keywords: {keywords[:3]}, niche: {niche}")
             
             # Build search queries
             queries = self._build_problem_queries(keywords, niche)
-            
+            print(f"Reddit: Built {len(queries)} queries")
+
             # Collect posts and comments
             all_content = []
             for query in queries[:2]:  # Limit to save credits
+                print(f"Reddit: Searching for: '{query}'")
                 content = self._search_reddit(query)
+                print(f"Reddit: Found {len(content)} results for '{query}'")
                 all_content.extend(content)
             
             # Extract problem statements
@@ -94,12 +101,14 @@ class RedditMiner:
             }
             
             # Start the actor run
+            print(f"Reddit: Starting Apify actor for query '{query}'")
             response = requests.post(
                 url,
                 json=payload,
                 headers=headers,
                 params={'token': self.apify_token}
             )
+            print(f"Reddit: Apify response status: {response.status_code}")
             
             if response.status_code == 201:
                 run_id = response.json()['data']['id']

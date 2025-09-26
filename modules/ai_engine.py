@@ -6,7 +6,7 @@ from .error_logger import error_logger
 class AIEngine:
     def __init__(self):
         self.client = get_openai_client()
-        self.model = "gpt-5-mini"  # Using GPT-5-mini for best balance of quality and cost
+        self.model = "gpt-5-mini"  # Using gpt-5-mini for best balance of quality and cost
         
     def generate_brief(self, data):
         """Generate complete creative strategy brief"""

@@ -15,9 +15,8 @@ from modules.coda_publisher import CodaPublisher
 from modules.error_logger import error_logger
 
 # Log startup info
-import openai as openai_module
-print(f"Starting app with OpenAI version: {openai_module.__version__}")
-print(f"Environment: Production on Render")
+print("Starting app with requests-based OpenAI implementation")
+print("Environment: Production on Render")
 
 app = Flask(__name__)
 

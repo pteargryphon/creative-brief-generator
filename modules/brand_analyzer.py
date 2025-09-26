@@ -134,7 +134,7 @@ Respond with valid JSON only."""
 
         try:
             response = self.client.chat.completions.create(
-                model="gpt-5-mini",  # Using gpt-5-mini for cost efficiency while getting GPT-5 quality
+                model="gpt-5-mini",  # Using gpt-5-mini for best balance of quality and cost
                 messages=[
                     {"role": "system", "content": "You are a marketing analyst. Respond with valid JSON only."},
                     {"role": "user", "content": prompt}

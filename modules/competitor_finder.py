@@ -3,54 +3,52 @@ import requests
 from urllib.parse import urlparse, quote
 import json
 from bs4 import BeautifulSoup
+from .openai_helper import get_openai_client
 
 class CompetitorFinder:
     def __init__(self):
         # We'll use DuckDuckGo (free, no API key needed!)
         self.search_method = os.environ.get('SEARCH_METHOD', 'duckduckgo')
+        self.client = get_openai_client()
         
     def find(self, brand_data):
         """Find top 5 competitors based on brand data"""
         try:
-            competitors = []
-            
-            # Build search queries
+            # Step 1: Search the web for competitor information
+            search_results = []
             queries = self._build_search_queries(brand_data)
-            
-            # Search for competitors
+
             for query in queries[:2]:  # Limit searches to save time
                 results = self._search_web(query, brand_data['url'])
-                competitors.extend(results)
-            
-            # Deduplicate and limit to 5
-            unique_competitors = self._deduplicate_competitors(competitors)
-            
-            # Analyze each competitor (basic analysis)
-            analyzed = []
-            for comp in unique_competitors[:5]:
-                analyzed.append(self._analyze_competitor(comp))
-            
-            return analyzed
-            
+                search_results.extend(results)
+
+            # Step 2: Use AI to analyze search results and extract actual competitor companies
+            competitors = self._extract_competitors_from_search_results(brand_data, search_results)
+
+            if competitors:
+                return competitors[:5]
+
+            # Fallback if AI extraction fails
+            return self._get_mock_competitors(brand_data)
+
         except Exception as e:
             print(f"Error finding competitors: {e}")
-            # Return mock competitors for now
             return self._get_mock_competitors(brand_data)
     
     def _build_search_queries(self, brand_data):
         """Build search queries to find competitors"""
         queries = []
-        
+
         # Query 1: Direct competitor search
-        queries.append(f"{brand_data['niche']} brands like {brand_data['brand_name']}")
-        
-        # Query 2: Industry + keywords
+        queries.append(f"{brand_data['brand_name']} competitors alternatives")
+
+        # Query 2: Industry + keywords + vs (to find comparison articles)
         main_keyword = brand_data['keywords'][0] if brand_data['keywords'] else brand_data['niche']
-        queries.append(f"best {main_keyword} {brand_data['industry']} companies")
-        
-        # Query 3: Alternative search
-        queries.append(f"{brand_data['brand_name']} alternatives competitors")
-        
+        queries.append(f"{brand_data['brand_name']} vs {main_keyword}")
+
+        # Query 3: Top companies in the niche
+        queries.append(f"top {brand_data['niche']} companies brands {brand_data['industry']}")
+
         return queries
     
     def _search_web(self, query, exclude_url):
@@ -157,16 +155,147 @@ class CompetitorFinder:
     
     def _analyze_competitor(self, competitor):
         """Analyze a competitor website (basic analysis from search results)"""
-        # In a full implementation, you could scrape their site
-        # For now, we'll use the search result data
+        # Extract the actual company name and URL from search results
+        title = competitor.get('title', '')
+        url = competitor.get('url', '')
+        description = competitor.get('description', '')
+
+        # Try to extract the actual company domain from the URL
+        # Skip if this is an article/blog/review site
+        parsed_url = urlparse(url)
+        domain = parsed_url.netloc.lower()
+
+        # Filter out common article/review sites
+        article_sites = ['medium.com', 'forbes.com', 'techcrunch.com', 'wikipedia.org',
+                        'reddit.com', 'quora.com', 'youtube.com', 'facebook.com',
+                        'twitter.com', 'linkedin.com', 'instagram.com', 'pinterest.com',
+                        'trustpilot.com', 'g2.com', 'capterra.com', 'producthunt.com']
+
+        if any(site in domain for site in article_sites):
+            # This is an article about competitors, try to extract company names from title/description
+            return self._extract_competitor_from_article(title, description)
+
+        # Clean up the brand name from the title
+        brand_name = title.split(' - ')[0].split(' | ')[0].split(':')[0].strip()
+
+        # Remove common suffixes
+        for suffix in [' Reviews', ' Review', ' Alternative', ' Alternatives', ' Competitor', ' vs']:
+            if brand_name.endswith(suffix):
+                brand_name = brand_name[:-len(suffix)].strip()
+
         return {
-            'brand_name': competitor.get('title', 'Unknown').split(' - ')[0].split(' | ')[0],
-            'url': competitor['url'],
-            'usp': competitor.get('description', 'To be analyzed'),
-            'funnel_type': 'Unknown',  # Would need to analyze their site
-            'has_ads': True  # Assume they have ads (would check Meta library in production)
+            'brand_name': brand_name or parsed_url.netloc.replace('www.', '').split('.')[0].title(),
+            'url': f"https://{parsed_url.netloc}" if parsed_url.scheme else url,
+            'usp': description[:150] if description else 'Leading solution in the industry',
+            'funnel_type': 'direct_purchase',  # Default assumption
+            'has_ads': True  # Assume they have ads
         }
     
+    def _extract_competitors_from_search_results(self, brand_data, search_results):
+        """Use AI to analyze search results and extract actual competitor companies"""
+        try:
+            # Compile search results into a text format for AI analysis
+            search_text = "Search results about competitors:\n\n"
+            for i, result in enumerate(search_results[:10], 1):
+                search_text += f"{i}. Title: {result.get('title', '')}\n"
+                search_text += f"   URL: {result.get('url', '')}\n"
+                search_text += f"   Description: {result.get('description', '')}\n\n"
+
+            prompt = f"""Analyze these search results about {brand_data.get('brand_name', 'a company')}'s competitors.
+
+Brand being analyzed:
+- Name: {brand_data.get('brand_name', 'Unknown')}
+- Industry: {brand_data.get('industry', 'Unknown')}
+- Niche: {brand_data.get('niche', 'Unknown')}
+- Website: {brand_data.get('url', '')}
+
+Search Results:
+{search_text}
+
+Based on these search results, identify the TOP 5 ACTUAL COMPETITOR COMPANIES mentioned.
+These should be real companies that compete directly with {brand_data.get('brand_name', 'this brand')}.
+
+DO NOT include:
+- The brand being analyzed ({brand_data.get('brand_name', '')})
+- Article websites (Forbes, TechCrunch, etc.)
+- Review sites (G2, Capterra, etc.)
+- Generic descriptors
+
+Return exactly 5 real competitor companies in JSON format:
+[
+  {{
+    "brand_name": "Company Name",
+    "url": "https://www.companywebsite.com",
+    "usp": "What makes them unique/competitive",
+    "why_competitor": "Why they compete with {brand_data.get('brand_name', 'this brand')}"
+  }}
+]
+
+If the search results mention specific companies as competitors, include those.
+For each company, provide their actual website URL if possible, otherwise use the format https://www.[companyname].com"""
+
+            response = self.client.chat.completions.create(
+                model="gpt-5-mini",
+                messages=[
+                    {"role": "system", "content": "You are an expert at analyzing search results to identify actual competitor companies. Extract only real company names mentioned in the search results. Always return valid JSON."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=1.0,
+                max_tokens=1500
+            )
+
+            result = response.choices[0].message.content
+            if result.startswith('```json'):
+                result = result[7:]
+            if result.endswith('```'):
+                result = result[:-3]
+
+            competitors_data = json.loads(result.strip())
+
+            # Format for our system
+            formatted_competitors = []
+            for comp in competitors_data[:5]:
+                formatted_competitors.append({
+                    'brand_name': comp.get('brand_name', 'Unknown'),
+                    'url': comp.get('url', ''),
+                    'usp': comp.get('usp', comp.get('why_competitor', 'Direct competitor')),
+                    'funnel_type': 'direct_purchase',  # Default
+                    'has_ads': True  # Assume most have ads
+                })
+
+            return formatted_competitors
+
+        except Exception as e:
+            print(f"AI extraction error: {e}")
+            return None
+
+    def _extract_competitor_from_article(self, title, description):
+        """Extract competitor info when the search result is an article about competitors"""
+        # Common patterns in titles like "X vs Y" or "Top 10 X alternatives"
+        # Try to extract the first mentioned competitor
+
+        # Look for "vs" pattern
+        if ' vs ' in title.lower():
+            parts = title.split(' vs ')
+            if len(parts) > 1:
+                competitor_name = parts[1].split(' ')[0].strip()
+                return {
+                    'brand_name': competitor_name,
+                    'url': f'https://www.{competitor_name.lower().replace(" ", "")}.com',
+                    'usp': 'Major competitor in the space',
+                    'funnel_type': 'direct_purchase',
+                    'has_ads': True
+                }
+
+        # Default fallback
+        return {
+            'brand_name': 'Competitor',
+            'url': 'https://example.com',
+            'usp': 'Alternative solution',
+            'funnel_type': 'Unknown',
+            'has_ads': False
+        }
+
     def _get_mock_competitors(self, brand_data):
         """Return mock competitors for testing"""
         industry = brand_data.get('industry', 'general')

@@ -1,11 +1,11 @@
 import os
 import json
-from openai import OpenAI
+import openai
 
 class AIEngine:
     def __init__(self):
-        self.client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
-        self.model = "gpt-4-turbo-preview"  # Using GPT-4 Turbo for quality
+        openai.api_key = os.environ.get('OPENAI_API_KEY')
+        self.model = "gpt-3.5-turbo"  # Using GPT-3.5 for cost efficiency
         
     def generate_brief(self, data):
         """Generate complete creative strategy brief"""
@@ -80,7 +80,7 @@ Provide a JSON response with:
 Focus on patterns that appear in long-running, successful ads."""
 
         try:
-            response = self.client.chat.completions.create(
+            response = openai.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a creative strategist analyzing ad trends. Respond with valid JSON only."},
@@ -134,7 +134,7 @@ Provide a JSON response with exactly 3 opportunities:
 Focus on gaps in the current market that align with customer pain points."""
 
         try:
-            response = self.client.chat.completions.create(
+            response = openai.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a strategic marketing consultant. Respond with valid JSON only."},
@@ -193,7 +193,7 @@ Generate exactly 5 ad concepts with this JSON structure:
 Make each concept unique and aligned with different opportunities/angles."""
 
         try:
-            response = self.client.chat.completions.create(
+            response = openai.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are an expert copywriter creating high-converting ad concepts. Respond with valid JSON only."},

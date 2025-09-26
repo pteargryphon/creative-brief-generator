@@ -3,11 +3,11 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
 import re
 import os
-from openai import OpenAI
+import openai
 
 class BrandAnalyzer:
     def __init__(self):
-        self.client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+        openai.api_key = os.environ.get('OPENAI_API_KEY')
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
@@ -131,8 +131,8 @@ Please provide a JSON response with:
 Respond with valid JSON only."""
 
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+            response = openai.chat.completions.create(
+                model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "You are a marketing analyst. Respond with valid JSON only."},
                     {"role": "user", "content": prompt}

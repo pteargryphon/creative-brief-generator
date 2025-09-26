@@ -14,6 +14,11 @@ from modules.ai_engine import AIEngine
 from modules.coda_publisher import CodaPublisher
 from modules.error_logger import error_logger
 
+# Log startup info
+import openai as openai_module
+print(f"Starting app with OpenAI version: {openai_module.__version__}")
+print(f"Environment: Production on Render")
+
 app = Flask(__name__)
 
 # Store job status in memory (in production, use Redis or database)
@@ -128,9 +133,11 @@ def process_brief(job_id, brand_url):
         }
         
     except Exception as e:
+        error_logger.log_error('process_brief', e, {'job_id': job_id, 'url': brand_url})
         job_status[job_id]['status'] = 'failed'
         job_status[job_id]['error'] = str(e)
         job_status[job_id]['message'] = f'Error: {str(e)}'
+        print(f"Process brief error: {e}")
 
 @app.route('/api/status/<job_id>')
 def check_status(job_id):

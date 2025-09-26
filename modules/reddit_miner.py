@@ -7,7 +7,7 @@ import re
 class RedditMiner:
     def __init__(self):
         self.apify_token = os.environ.get('APIFY_API_TOKEN')
-        self.actor_id = 'alexey/reddit-scraper'  # Apify Reddit Scraper actor
+        self.actor_id = 'trudax/reddit-scraper'  # Apify Reddit Scraper actor
         print(f"Reddit: Apify token {'found' if self.apify_token else 'not found'} (length: {len(self.apify_token) if self.apify_token else 0})")
         
     def mine_problems(self, keywords, niche):
@@ -71,29 +71,13 @@ class RedditMiner:
             
             # Configuration for Reddit Scraper
             payload = {
-                "searchMode": "posts+comments",
-                "searchQuery": query,
+                "searchBy": "searchTerm",  # Search by keyword
+                "searchTerm": query,
                 "sort": "relevance",
                 "time": "year",  # Last year
-                "maxItems": 50,   # Limit results
-                "extendedOutputFunction": """
-                    // Filter for problem-related content
-                    const text = item.text || item.body || '';
-                    const problemKeywords = ['problem', 'issue', 'struggle', 'hate', 'annoying', 'frustrated', 'difficult', 'wish', 'need'];
-                    const hasProblem = problemKeywords.some(keyword => 
-                        text.toLowerCase().includes(keyword)
-                    );
-                    
-                    if (hasProblem) {
-                        return {
-                            text: text,
-                            score: item.score || 0,
-                            subreddit: item.subreddit || '',
-                            type: item.type || 'comment'
-                        };
-                    }
-                    return null;
-                """
+                "maxItems": 30,   # Limit results
+                "includeComments": True,  # Include comments
+                "debugMode": False
             }
             
             headers = {

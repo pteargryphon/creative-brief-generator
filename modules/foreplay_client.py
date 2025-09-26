@@ -59,7 +59,7 @@ class ForeplayClient:
                 'query': keyword,
                 'publisher_platform': 'facebook',  # Focus on Meta ads
                 'live': 'true',  # Only get currently running ads
-                'display_format': 'video,image',  # Get both video and image ads
+                # Remove display_format - let API return all formats
                 'limit': 10,
                 'order': 'newest'
             }

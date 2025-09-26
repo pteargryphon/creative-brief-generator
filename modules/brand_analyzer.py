@@ -3,12 +3,12 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
 import re
 import os
-from openai import OpenAI
+from .openai_helper import get_openai_client
 from .error_logger import error_logger
 
 class BrandAnalyzer:
     def __init__(self):
-        self.client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+        self.client = get_openai_client()
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }

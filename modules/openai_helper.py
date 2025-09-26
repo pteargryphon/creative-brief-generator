@@ -19,6 +19,7 @@ class OpenAIHelper:
         # Using gpt-5-mini as default - it's the latest cost-effective GPT-5 model
         self.model = "gpt-5-mini"
         
+    @property
     def chat(self):
         """Compatibility layer to mimic OpenAI client structure"""
         return self
